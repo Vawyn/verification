@@ -1,3 +1,1 @@
-_Find Your Brand._
-
-We are a dedicated community that brings together domain name enthusiasts and entrepreneurs of all experience levels. Get help with setting up confusing DNS records, ask questions about web hosting, and connect with like-minded individuals to discuss things going on around the web.
+**Artifice** is a guild that was created out of a few friends wanting to have a good time. We have been long term players of Swordie and would like the chance to meet more people and also help out those in need. We will always be striving to create and maintain a better enviroment and would love if you were a part of it. We will be hosting **guild events**, **giveaways**, **music streams**, **movie streams** and **playing other games together**. We look forward to meeting you.

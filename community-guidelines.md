@@ -2,8 +2,8 @@
 
 🌸 **Be kind** and friendly to all members.
 
-💬 **Actively contribute** to topical discussions, but **avoid discussing things that are generally considered illegal, offensive, insulting, or disturbing**.
+💬 **Actively contribute** to the guild and building it, but **avoid discussing things that are generally considered illegal, offensive, insulting, or disturbing**.
 
 🛑 Try to **avoid conflict** as much as possible in your public messages. If you happen to offend someone, politely talking to them via DM is a good way to work out any issues.
 
-📢 We love to help you grow your business and gain loyal new customers, but **please refrain from directly advertising your products or services without first asking permission** from an admin.
+📢 You are to read the rules prior to reacting. **You consent and agree the the rules given by the guild management. Any breach of the guild rules will be punished accordingly as per the rules stated.**
