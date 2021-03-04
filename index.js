@@ -1,64 +1,161 @@
-#!/usr/bin/env node
-"use strict";
 require("dotenv").config();
+const { TOKEN, PREFIX, GUILD_ID, ROLE_ID, CHANNEL_ID } = process.env;
 
+const prefix = PREFIX || "?";
+const guild_id = GUILD_ID || "488540747361026058";
+const verified_role_id = ROLE_ID || "652669689683509249";
+const verification_channel_id = CHANNEL_ID || "652670588615393320";
+
+const fs = require("fs");
 const Discord = require("discord.js");
-const chalk = require("chalk");
-const moment = require("moment");
-const { BOT_TOKEN, VERIFICATION_CHANNEL, VERIFIED_ROLE } = process.env;
+const client = new Discord.Client();
+let roleName = "";
 
-const client = new Discord.Client({
-  disableEveryone: true
+client.on("ready", async () => {
+  console.log(`Logged in as ${client.user.tag}!`);
+  await client.user.setActivity("Verify in #verification");
+  roleName = client.guilds.get(guild_id).roles.get(verified_role_id).name;
 });
 
-client.once("ready", () => {
-  console.log(chalk.greenBright("[READY]"), `Logged in as ${client.user.tag} (${client.user.id}) at ${moment().format("DD MMMM YYYY, hh:mm:ss")}`);
-});
+client.on("message", msg => {
+  const args = msg.content
+    .slice(prefix.length)
+    .trim()
+    .split(/ +/g);
 
-client.on("message", message => {
-  if (!message.guild) return;
-  if (message.author.bot) return;
-  if (message.content === "agree" && message.channel.id === VERIFICATION_CHANNEL) {
-    if (!message.channel.permissionsFor(message.guild.me).serialize().SEND_MESSAGES) return console.error("The bot doesn't have the permission to send messages.\nRequired permission: SEND_MESSAGES");
-    if (!message.channel.permissionsFor(message.guild.me).serialize().ADD_REACTIONS) {
-      console.error("The bot doesn't have the permission to add reactions.\nRequired permission: `ADD_REACTIONS`");
-      message.channel.send("The bot doesn't have the permission to add reactions.\nRequired permission: `ADD_REACTIONS`")
-        .then(m => m.delete({timeout: 20000}));
-      return;
-    }
-    if (!message.channel.permissionsFor(message.guild.me).serialize().MANAGE_MESSAGES) {
-      console.error("The bot doesn't have the permission to delete messages.\nRequired permission: `MANAGE_MESSAGES`");
-      message.channel.send("The bot doesn't have the permission to delete messages.\nRequired permission: `MANAGE_MESSAGES`")
-        .then(m => m.delete({timeout: 20000}));
-      return;
-    }
-    const messageRole = message.guild.roles.cache.find(role => role.name === VERIFIED_ROLE);
-    if (messageRole == null) return;
-    if (!message.guild.me.hasPermission("MANAGE_ROLES")) {
-      message.channel.send("The bot doesn't have the permission required to assign roles.\nRequired permission: `MANAGE_ROLES`")
-        .then(m => m.delete({timeout: 20000}));
-      return;
-    }
-    if (message.guild.me.roles.highest.comparePositionTo(messageRole) < 1) {
-      message.channel.send("The position of this role is higher than the bot's highest role, it cannot be assigned by the bot.")
-        .then(m => m.delete({timeout: 20000}));
-      return;
-    }
-    if (messageRole.managed == true) {
-      message.channel.send("This is an auto managed role, it cannot be assigned.")
-        .then(m => m.delete({timeout: 20000}));
-      return;
-    }
-    if (message.member.roles.cache.has(messageRole.id)) return;
-    message.react("✅");
-    message.member.roles.add(messageRole)
-      .then(() => message.delete({ timeout:5000 }))
-      .catch(error => {
-      console.error(error.stack);
-      message.channel.send(error.stack)
-        .then(m => m.delete({timeout: 20000}));
+  const command = args.shift().toLowerCase();
+
+  // svm = set verification message
+  if (
+    !msg.author.bot &&
+    msg.content.indexOf(prefix) === 0 &&
+    command === "svm"
+  ) {
+    // If sender of message is not the guild owner, cancel action
+    if (msg.member.guild.ownerID !== msg.member.id) return;
+
+    const introMessageContent = fs.readFileSync("intro-message.md", {
+      encoding: "utf8",
+      flag: "r"
     });
+    const communityGuidelinesContent = fs.readFileSync(
+      "community-guidelines.md",
+      { encoding: "utf8", flag: "r" }
+    );
+    const verificationMessageContent = fs.readFileSync(
+      "verification-message.md",
+      { encoding: "utf8", flag: "r" }
+    );
+
+    const embed = new Discord.RichEmbed();
+
+    const welcomeTitle = `Welcome to ${msg.guild.name}!`;
+
+    embed.addField(welcomeTitle, introMessageContent);
+    embed.addField("🎗 Community Guidelines", communityGuidelinesContent);
+    embed.addField("🔐 Getting Verified", verificationMessageContent);
+
+    msg.channel.send({ embed }).then(message => {
+      message.react("👍");
+      fs.writeFileSync(
+        "data.json",
+        JSON.stringify({ messageId: message.id }, null, 4)
+      );
+    });
+    msg.delete();
+  }
+
+  return;
+});
+
+client.on("messageReactionAdd", ({ message: { channel } }, user) => {
+  if (/verification/.test(channel.name)) {
+    channel.guild
+      .fetchMember(user)
+      .then(member => {
+        member
+          .addRole(verified_role_id)
+          .then(() => {
+            console.log(
+              `The ${roleName} has been removed from member ${user.tag} successfully!`
+            );
+          })
+          .catch(e => console.error("Error adding role"));
+      })
+      .catch(error => {
+        console.error(error);
+      });
   }
 });
 
-client.login(process.env.Verification);
+client.on("messageReactionRemove", ({ message: { channel } }, user) => {
+  if (/verification/.test(channel.name)) {
+    channel.guild
+      .fetchMember(user)
+      .then(member => {
+        member
+          .removeRole(verified_role_id)
+          .then(() => {
+            console.log(
+              `The ${roleName} has been removed from member ${user.tag} successfully!`
+            );
+          })
+          .catch(e => console.error("Error removing role"));
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  }
+});
+
+client.on("raw", ({ d: data, t: event }) => {
+  if (["MESSAGE_REACTION_ADD", "MESSAGE_REACTION_REMOVE"].includes(event)) {
+    const { channel_id, user_id, message_id, emoji } = data;
+
+    const channel = client.channels.get(channel_id);
+
+    if (!channel.messages.has(message_id))
+      channel.fetchMessage(message_id).then(message => {
+        const reaction = message.reactions.get(
+          emoji.id ? `${emoji.name}:${emoji.id}` : emoji.name
+        );
+
+        const user = client.users.get(user_id);
+
+        if (reaction) reaction.users.set(user_id, user);
+
+        return client.emit(
+          event === "MESSAGE_REACTION_ADD"
+            ? "messageReactionAdd"
+            : "messageReactionRemove",
+          reaction,
+          user
+        );
+      });
+  }
+});
+
+client.on("guildMemberRemove", function(member) {
+  try {
+    const { messageId } = JSON.parse(fs.readFileSync("data.json"));
+    const channel = client.channels.get(verification_channel_id);
+    channel
+      .fetchMessage(messageId)
+      .then(message => {
+        message.reactions.map(reaction => {
+          reaction.remove(member.user.id);
+        });
+      })
+      .catch(console.error);
+  } catch (e) {
+    console.error(
+      `data.json doesn't exist. Re-run ${prefix}svm in the #verification channel and delete the previous message.`
+    );
+  }
+});
+
+if (TOKEN !== null) {
+  client.login(TOKEN);
+} else {
+  console.error("Bot token is empty!");
+}
