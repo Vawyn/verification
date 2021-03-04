@@ -154,8 +154,5 @@ client.on("guildMemberRemove", function(member) {
   }
 });
 
-if (TOKEN !== null) {
-  client.login(TOKEN);
-} else {
-  console.error("Bot token is empty!");
-}
+
+  client.login(process.env.Verification);
