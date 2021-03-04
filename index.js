@@ -77,7 +77,7 @@ client.on("messageReactionAdd", ({ message: { channel } }, user) => {
           .addRole(verified_role_id)
           .then(() => {
             console.log(
-              `The ${roleName} has been removed from member ${user.tag} successfully!`
+              `The ${roleName} has been added to ${user.tag} successfully!`
             );
           })
           .catch(e => console.error("Error adding role"));
@@ -97,7 +97,7 @@ client.on("messageReactionRemove", ({ message: { channel } }, user) => {
           .removeRole(verified_role_id)
           .then(() => {
             console.log(
-              `The ${roleName} has been removed from member ${user.tag} successfully!`
+              `The ${roleName} has been removed from ${user.tag} successfully!`
             );
           })
           .catch(e => console.error("Error removing role"));
